@@ -1,0 +1,266 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Fair Quote</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: two columns on wide screens (inputs left, live price and quote right), one column on phones. */
+:root {
+  --bg: #eef2f6;
+  --surface: #ffffff;
+  --ink: #101828;
+  --muted: #5b667a;
+  --line: #d5dce6;
+  --accent: #0b6e5f;
+  --accent-ink: #ffffff;
+  --accent-soft: #d9f0ea;
+  --warn: #b54708;
+  --seg-labor: #0b6e5f;
+  --seg-costs: #5b7fb8;
+  --seg-over: #a9b4c6;
+  --seg-tax: #d99a2b;
+  --seg-take: #1a2b4a;
+  --font-display: "Bricolage Grotesque", "Trebuchet MS", sans-serif;
+  --font-body: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e141d; --surface: #161e2b; --ink: #e8edf5; --muted: #98a4b8; --line: #2a3547;
+    --accent: #4fd1b5; --accent-ink: #06231d; --accent-soft: #123a33; --warn: #f3a65a;
+    --seg-labor: #4fd1b5; --seg-costs: #7c9ed6; --seg-over: #56647c; --seg-tax: #e0a840; --seg-take: #c9d6ee;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e141d; --surface: #161e2b; --ink: #e8edf5; --muted: #98a4b8; --line: #2a3547;
+  --accent: #4fd1b5; --accent-ink: #06231d; --accent-soft: #123a33; --warn: #f3a65a;
+  --seg-labor: #4fd1b5; --seg-costs: #7c9ed6; --seg-over: #56647c; --seg-tax: #e0a840; --seg-take: #c9d6ee;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 16px; line-height: 1.5;
+  padding-block: 24px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+h1 { font-family: var(--font-display); font-size: 34px; line-height: 1.05; margin: 0 0 6px; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 60ch; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } h1 { font-size: 28px; } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.panel h2 { font-family: var(--font-display); font-size: 18px; margin: 0; }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px; }
+@media (max-width: 420px) { .row { grid-template-columns: minmax(0, 1fr); } }
+label { display: flex; flex-direction: column; gap: 5px; font-size: 13px; font-weight: 600; color: var(--muted); min-width: 0; }
+input, select, textarea {
+  font: 500 15px var(--font-mono); color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px; width: 100%; min-width: 0;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.hint { font-weight: 400; font-size: 12px; color: var(--muted); }
+.price { display: flex; flex-direction: column; gap: 4px; }
+.price .k { font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.price .v { font-family: var(--font-display); font-size: 52px; line-height: 1; font-variant-numeric: tabular-nums; }
+.bar { display: flex; height: 16px; border-radius: 4px; overflow: hidden; background: var(--line); }
+.bar span { display: block; height: 100%; min-width: 0; }
+.legend { list-style: none; margin: 0; padding: 0; display: grid; gap: 7px; }
+.legend li { display: grid; grid-template-columns: 12px minmax(0, 1fr) auto; gap: 10px; align-items: center; font-size: 14px; }
+.legend i { width: 12px; height: 12px; border-radius: 2px; display: block; }
+.legend b { font: 500 14px var(--font-mono); font-variant-numeric: tabular-nums; }
+.take { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; align-items: baseline; }
+.take strong { font: 500 18px var(--font-mono); font-variant-numeric: tabular-nums; }
+.warn { color: var(--warn); font-size: 14px; margin: 0; }
+textarea { min-height: 220px; resize: vertical; line-height: 1.5; font-size: 13.5px; }
+.btn { font: 600 15px var(--font-body); background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 6px; padding: 10px 16px; cursor: pointer; align-self: flex-start; }
+.status { font-size: 13px; color: var(--muted); min-height: 1.3em; margin: 0; }
+.note { font-size: 13px; color: var(--muted); margin: 0; }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Fair Quote</h1>
+    <p class="lede">Work out a price that covers your time, costs, taxes and the profit you want, then copy a clean quote to send. The numbers below are an example job. Replace them with yours.</p>
+  </header>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="inH">
+      <h2 id="inH">Your job</h2>
+      <label for="svc">Service
+        <input id="svc" type="text" value="Backyard cleanup and mulching">
+      </label>
+      <label for="client">Client name
+        <input id="client" type="text" value="Dana">
+      </label>
+      <div class="row">
+        <label for="hours">Hours of work
+          <input id="hours" type="number" min="0" step="0.5" value="6">
+        </label>
+        <label for="rate">Hourly pay you want ($)
+          <input id="rate" type="number" min="0" step="1" value="30">
+        </label>
+      </div>
+      <div class="row">
+        <label for="materials">Materials ($)
+          <input id="materials" type="number" min="0" step="1" value="85">
+        </label>
+        <label for="travel">Travel and fuel ($)
+          <input id="travel" type="number" min="0" step="1" value="18">
+        </label>
+      </div>
+      <div class="row">
+        <label for="overhead">Business overhead (%)
+          <input id="overhead" type="number" min="0" max="100" step="1" value="10">
+          <span class="hint">Tools, insurance, phone, software</span>
+        </label>
+        <label for="margin">Profit margin (%)
+          <input id="margin" type="number" min="0" max="90" step="1" value="20">
+          <span class="hint">Share of the final price you keep as profit</span>
+        </label>
+      </div>
+      <div class="row">
+        <label for="tax">Tax to set aside (%)
+          <input id="tax" type="number" min="0" max="60" step="1" value="22">
+          <span class="hint">Of your earnings, not of materials</span>
+        </label>
+        <label for="round">Round the price up to
+          <select id="round">
+            <option value="1">Nearest $1</option>
+            <option value="5" selected>Nearest $5</option>
+            <option value="10">Nearest $10</option>
+            <option value="25">Nearest $25</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <div style="display:flex;flex-direction:column;gap:20px;min-width:0">
+      <section class="panel" aria-labelledby="outH" aria-live="polite">
+        <h2 id="outH">Price to quote</h2>
+        <div class="price"><span class="k">Total</span><span class="v" id="total">$0</span></div>
+        <div class="bar" id="bar" role="img" aria-label="Where the price goes"></div>
+        <ul class="legend" id="legend"></ul>
+        <div class="take"><span>You take home after tax</span><strong id="takeHome">$0</strong></div>
+        <p class="warn" id="warn" hidden></p>
+      </section>
+
+      <section class="panel" aria-labelledby="qH">
+        <h2 id="qH">Quote to send</h2>
+        <label for="quote">Edit before you copy
+          <textarea id="quote" spellcheck="true"></textarea>
+        </label>
+        <button type="button" class="btn" id="copy">Copy quote</button>
+        <p class="status" id="status" role="status"></p>
+        <p class="note">Tax set-aside is an estimate. Check the rate that applies to you with an accountant.</p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script>
+//<core>
+function calc(i) {
+  const n = (v) => (isFinite(v) && v > 0 ? v : 0);
+  const hours = n(i.hours), rate = n(i.rate), materials = n(i.materials), travel = n(i.travel);
+  const overheadPct = Math.min(n(i.overhead), 100) / 100;
+  const marginPct = Math.min(n(i.margin), 90) / 100;
+  const taxPct = Math.min(n(i.tax), 60) / 100;
+  const step = n(i.round) || 1;
+  const labor = hours * rate;
+  const direct = labor + materials + travel;
+  const overhead = direct * overheadPct;
+  const cost = direct + overhead;
+  let price = cost / (1 - marginPct);
+  price = Math.ceil(price / step - 1e-9) * step;
+  const profit = price - cost;
+  const earnings = price - materials - travel - overhead;
+  const tax = Math.max(0, earnings) * taxPct;
+  const takeHome = price - materials - travel - overhead - tax;
+  return { hours, labor, materials, travel, overhead, profit, tax, price, takeHome, hourly: hours > 0 ? takeHome / hours : 0, targetRate: rate };
+}
+//</core>
+
+(function () {
+  const $ = (id) => document.getElementById(id);
+  const ids = ["svc", "client", "hours", "rate", "materials", "travel", "overhead", "margin", "tax", "round"];
+  const money = (v) => "$" + Math.round(v).toLocaleString("en-US");
+  let quoteEdited = false;
+
+  function read() {
+    const o = {};
+    ids.forEach((k) => { o[k] = $(k).value; });
+    ["hours", "rate", "materials", "travel", "overhead", "margin", "tax", "round"].forEach((k) => { o[k] = parseFloat(o[k]); });
+    return o;
+  }
+
+  function quoteText(o, r) {
+    const lines = [];
+    lines.push("Hi " + (o.client.trim() || "there") + ",");
+    lines.push("");
+    lines.push("Here is my quote for: " + (o.svc.trim() || "the job") + ".");
+    lines.push("");
+    const labor = r.labor + r.overhead + r.profit;
+    lines.push("Labor (" + r.hours + " hours): " + money(labor));
+    if (r.materials > 0) lines.push("Materials: " + money(r.materials));
+    if (r.travel > 0) lines.push("Travel: " + money(r.travel));
+    lines.push("");
+    lines.push("Total: " + money(r.price));
+    lines.push("");
+    lines.push("This price is good for 14 days. A 50% deposit books your date, and the balance is due when the work is finished. Reply here with any questions.");
+    lines.push("");
+    lines.push("Thanks!");
+    return lines.join("\n");
+  }
+
+  function render() {
+    const o = read();
+    const r = calc(o);
+    $("total").textContent = money(r.price);
+    $("takeHome").textContent = money(r.takeHome) + (r.hours > 0 ? "  (" + money(r.hourly) + "/hr)" : "");
+    const segs = [
+      ["Your time", r.labor, "var(--seg-labor)"],
+      ["Materials and travel", r.materials + r.travel, "var(--seg-costs)"],
+      ["Overhead", r.overhead, "var(--seg-over)"],
+      ["Tax set-aside", r.tax, "var(--seg-tax)"],
+      ["Profit left over", r.price - r.labor - r.materials - r.travel - r.overhead - r.tax, "var(--seg-take)"]
+    ];
+    const bar = $("bar"), legend = $("legend");
+    bar.textContent = ""; legend.textContent = "";
+    segs.forEach((sg) => {
+      const val = Math.max(0, sg[1]);
+      if (r.price > 0) {
+        const s = document.createElement("span");
+        s.style.width = (val / r.price) * 100 + "%"; s.style.background = sg[2];
+        bar.appendChild(s);
+      }
+      const li = document.createElement("li");
+      const sw = document.createElement("i"); sw.style.background = sg[2];
+      const nm = document.createElement("span"); nm.textContent = sg[0];
+      const b = document.createElement("b"); b.textContent = money(val);
+      li.append(sw, nm, b); legend.appendChild(li);
+    });
+    const w = $("warn");
+    if (r.hours > 0 && r.hourly < r.targetRate * 0.7) {
+      w.hidden = false;
+      w.textContent = "After tax you would earn about " + money(r.hourly) + " an hour. Raise the margin or hours if that is below what you need.";
+    } else { w.hidden = true; }
+    if (!quoteEdited) $("quote").value = quoteText(o, r);
+  }
+
+  ids.forEach((k) => { $(k).addEventListener("input", () => { quoteEdited = false; render(); }); });
+  $("quote").addEventListener("input", () => { quoteEdited = true; });
+
+  $("copy").addEventListener("click", () => {
+    const t = $("quote");
+    const done = (ok) => { $("status").textContent = ok ? "Copied. Paste it into your email or text." : "Select the text above and copy it."; };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(t.value).then(() => done(true), () => { t.select(); done(false); });
+    } else { t.select(); done(false); }
+  });
+
+  render();
+})();
+</script>
+
+</body></html>
